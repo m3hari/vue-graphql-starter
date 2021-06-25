@@ -1,0 +1,80 @@
+version: "3.6"
+services:
+  yb-master:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-master-n1
+    volumes:
+      - yb-master-data-1:/mnt/master
+    command:
+      [
+        "/home/yugabyte/bin/yb-master",
+        "--fs_data_dirs=/mnt/master",
+        "--master_addresses=yb-master-n1:7100",
+        "--rpc_bind_addresses=yb-master-n1:7100",
+        "--replication_factor=1",
+      ]
+    ports:
+      - "7000:7000"
+    environment:
+      SERVICE_7000_NAME: yb-master
+
+    logging:
+      driver: none
+
+  yb-tserver:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-tserver-n1
+    volumes:
+      - yb-tserver-data-1:/mnt/tserver
+    command:
+      [
+        "/home/yugabyte/bin/yb-tserver",
+        "--fs_data_dirs=/mnt/tserver",
+        "--start_pgsql_proxy",
+        "--rpc_bind_addresses=yb-tserver-n1:9100",
+        "--tserver_master_addrs=yb-master-n1:7100",
+      ]
+    ports:
+      - "9042:9042"
+      - "5433:5433"
+      - "9000:9000"
+    environment:
+      SERVICE_5433_NAME: ysql
+      SERVICE_9042_NAME: ycql
+      SERVICE_6379_NAME: yedis
+      SERVICE_9000_NAME: yb-tserver
+    depends_on:
+      - yb-master
+    logging:
+      driver: none
+
+  graphql-engine:
+    # OFFICIAL IMAGE DOESN'T WORK ON mac-M1
+    # image: hasura/graphql-engine:v2.0.0-alpha.10.cli-migrations-v3
+    image: fedormelexin/graphql-engine-arm64:v2.0.0.cli-migrations-v2
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "yb-tserver"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:@host.docker.internal:5433/yugabyte
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:@host.docker.internal:5433/yugabyte
+
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+
+    volumes:
+      - ./hasura/migrations:/hasura-migrations
+      - ./hasura/metadata:/hasura-metadata
+
+    logging:
+      driver: none
+
+volumes:
+  db_data:
+  yb-master-data-1:
+  yb-tserver-data-1:

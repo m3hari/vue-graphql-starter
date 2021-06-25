@@ -1,0 +1,13 @@
+{
+  "name": "vue-graphql-starter",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "install": "lerna bootstrap",
+    "dev": "lerna run dev --parallel"
+  },
+  "devDependencies": {
+    "lerna": "^4.0.0"
+  }
+}

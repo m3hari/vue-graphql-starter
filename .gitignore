@@ -1,0 +1,8 @@
+.vscode
+
+# Dependency directories
+**/node_modules
+**/dist
+
+# lerna files
+/lerna-debug.log

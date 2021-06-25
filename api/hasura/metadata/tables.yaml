@@ -1,0 +1,57 @@
+- table:
+    schema: public
+    name: todos
+  object_relationships:
+  - name: owner
+    using:
+      foreign_key_constraint_on: owner_id
+  insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      set:
+        owner_id: x-hasura-User-Id
+      columns: []
+      backend_only: false
+  select_permissions:
+  - role: user
+    permission:
+      columns:
+      - content
+      - created_at
+      - updated_at
+      - id
+      - owner_id
+      filter:
+        owner_id:
+          _eq: X-Hasura-User-Id
+  update_permissions:
+  - role: user
+    permission:
+      columns:
+      - content
+      - created_at
+      - updated_at
+      - id
+      - owner_id
+      filter:
+        owner_id:
+          _eq: X-Hasura-User-Id
+      check: null
+  delete_permissions:
+  - role: user
+    permission:
+      filter:
+        owner_id:
+          _eq: X-Hasura-User-Id
+- table:
+    schema: public
+    name: users
+  array_relationships:
+  - name: todos
+    using:
+      foreign_key_constraint_on:
+        column: owner_id
+        table:
+          schema: public
+          name: todos
